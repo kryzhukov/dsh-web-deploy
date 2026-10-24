@@ -1,0 +1,10 @@
+{
+  "user": "admin",
+  "salt": "7dEauU2a8qBrx-OzX_eLzQ",
+  "hash": "K6GSKT8m99ZE8XEeAWJ3daWFF6CeCNX3mvDVyac9hcA",
+  "scrypt": {
+    "N": 16384,
+    "r": 8,
+    "p": 1
+  }
+}

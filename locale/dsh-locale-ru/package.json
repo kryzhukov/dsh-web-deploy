@@ -1,0 +1,22 @@
+{
+  "name": "dsh-locale-ru",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Russian language pack for the DeepSeek Harness Web UI",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-locale"
+      ],
+      "platform": "web",
+      "immediately": true
+    }
+  }
+}

@@ -1,0 +1,80 @@
+DSH Web — памятка администратора
+=================================
+
+Внешний адрес:  https://<ваш-домен>
+  логин:  admin
+  пароль: задан через set-password.ps1
+
+Локально:          http://127.0.0.1:3080
+По локальной сети: http://<LAN-IP>:3080   (HTTP Basic)
+
+Резервный прямой порт DSH: http://127.0.0.1:3081
+  (без Basic-шлюза; требует cookie, которую выдаёт сам DSH).
+  Токенизированный URL печатается при старте DSH в web-live.log
+  (строка "dsh web:").
+
+Схема
+-----
+Браузер
+  -> https://<ваш-домен> (TLS, OpenResty/nginx)
+  -> http://<LAN-IP>:3080
+  -> netsh portproxy 0.0.0.0:3080 -> 127.0.0.1:3099
+  -> web-auth-proxy.cjs (Basic-авторизация)
+  -> http://127.0.0.1:3081 (DSH Web)
+
+Автозапуск
+----------
+Задача планировщика "DSH Web Auth Gateway":
+  - триггер: вход пользователя в Windows, задержка 10 секунд;
+  - запускается с повышенными правами;
+  - при падении супервизора — до 3 перезапусков;
+  - ограничение времени выполнения отключено.
+
+Супервизор: %USERPROFILE%\.dsh\web-auth-supervisor.ps1
+
+Что делает:
+  - каждые 10 секунд проверяет DSH (:3081) и шлюз (:3099);
+  - каждые 60 секунд проверяет portproxy;
+  - подхватывает устаревший lock после сбоя.
+
+После перезагрузки: войти в Windows, подождать 15–40 секунд,
+открыть сайт. Если 502 — DSH ещё стартует, обновить страницу.
+
+Смена пароля
+------------
+  cd %USERPROFILE%\.dsh
+  powershell -ExecutionPolicy Bypass -File .\set-password.ps1 -User admin
+
+Шлюз перечитывает auth.json в течение ~5 секунд, перезапуск не нужен.
+В браузере — Ctrl+F5. Если менялся логин — закрыть/открыть вкладку,
+чтобы сбросить Basic-кеш.
+
+Управление
+----------
+Перезапустить стек:
+  Stop-ScheduledTask  -TaskName 'DSH Web Auth Gateway'
+  Start-ScheduledTask -TaskName 'DSH Web Auth Gateway'
+
+Отключить автозапуск:
+  Disable-ScheduledTask -TaskName 'DSH Web Auth Gateway'
+
+Полностью остановить внешний доступ:
+  Stop-ScheduledTask -TaskName 'DSH Web Auth Gateway'
+  Get-NetTCPConnection -LocalPort 3099 -State Listen |
+      ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+  netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=3080
+
+Логи
+----
+%USERPROFILE%\.dsh\web-stack-supervisor.log
+%USERPROFILE%\.dsh\web-auth-proxy.log
+%USERPROFILE%\.dsh\web-live.log
+%USERPROFILE%\.dsh\web-live.err.log
+
+Безопасность
+------------
+- Снаружи только HTTPS; Basic-пароль на участке браузер -> proxy шифруется.
+- Basic-пароль и cookie шлюза — единственный внешний барьер.
+- Пароль хранится как scrypt-хеш в web-auth-proxy.auth.json.
+- DSH слушает только 127.0.0.1:3081; шлюз — только 127.0.0.1:3099.
+- LAN-IP должен быть закреплён DHCP-reservation или статикой.

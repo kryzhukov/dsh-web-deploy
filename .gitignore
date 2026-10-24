@@ -1,0 +1,30 @@
+# Секреты и локальное состояние — никогда не коммитить
+web-auth-proxy.auth.json
+web-auth-proxy.auth.json.tmp
+web-auth-proxy.secret
+.credentials.yaml
+*.secret
+*.pem
+*.key
+
+# Логи и runtime-файлы
+*.log
+*.log.1
+web-stack-supervisor.pid
+
+# DSH-сессии и пользовательские данные
+sessions/
+storages/
+attachments/
+llm-deepseek/
+logs/
+
+# Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+
+# ОС
+Thumbs.db
+desktop.ini
+.DS_Store
